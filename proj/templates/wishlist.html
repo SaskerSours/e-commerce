@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<body>
+
+<nav aria-label="breadcrumb" class="w-100 float-left">
+    <ol class="breadcrumb parallax justify-content-center"
+        data-source-url="{% static 'eccomerce/img/banner/parallax.jpg' %}"
+        style="background-image: url(&quot;img/banner/parallax.jpg&quot;); background-position: 50% 0.809717%;">
+        <li class="breadcrumb-item"><a href="#">Home</a></li>
+    </ol>
+</nav>
+
+<div class="cart-area table-area pt-110 pb-95 float-left w-100">
+    <div class="container">
+        <div class=" cart-wrapper float-left w-100">
+            <div class="table-responsive">
+                <table class="table product-table text-center">
+                    <thead>
+                    <tr>
+                        <th class="table-remove text-uppercase">remove</th>
+                        <th class="table-image text-uppercase">image</th>
+                        <th class="table-p-name text-uppercase">product</th>
+                        <th class="table-p-price text-uppercase">price</th>
+                        <th class="table-p-qty text-uppercase">Stock Status</th>
+                        <th class="table-total text-uppercase">add to cart</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for wish in products %}
+                    <tr>
+                        <td class="table-remove">
+                            <a href="{% url 'delete_wish_product' wish.product.pk request.user.username %}">
+                                <button><i class="material-icons">delete</i></button>
+                            </a>
+                        </td>
+                        <td class="table-image"><a href="product-details.html">
+                            <img src="{{ wish.product.image.url }}" alt="{{ wish.product.model }}"></a></td>
+                        <td class="table-p-name text-capitalize"><a href="product-details.html">aspetur autodit
+                            autfugit</a></td>
+                        <td class="table-p-price"><p>$100.00</p></td>
+                        <td class="table-p-qty">in stock</td>
+                        <td class="table-addtocart"><a href="cart_page.html" class="btn-primary btn">Add to cart</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<footer class="page-footer font-small">
+    <div class="container text-center text-md-left">
+        <div class="row">
+            <div class="col-md-2 footer-cms footer-column">
+                <div class="ttcmsfooter">
+                    <div class="footer-logo"><img src="{% static 'eccomerce/img/logos/footer-logo.png"
+                                                  alt="footer-logo"></div>
+                    <div class="footer-desc">At vero eos et accusamus et iusto odio dignissimos ducimus, duis faucibus
+                        enim vitae
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 footer-column">
+                <div class="title">
+                    <a href="#company" class="font-weight-normal text-capitalize mb-10" data-toggle="collapse"
+                       aria-expanded="false">company</a></div>
+                <ul id="company" class="list-unstyled collapse">
+                    <li>
+                        <a href="#">search</a></li>
+                    <li>
+                        <a href="#">New Products</a></li>
+                    <li>
+                        <a href="category.html">Best Collection</a></li>
+                    <li>
+                        <a href="wishlist.html">wishlist</a></li>
+                </ul>
+            </div>
+            <div class="col-md-2 footer-column">
+                <div class="title">
+                    <a href="#products" class="font-weight-normal text-capitalize mb-10" data-toggle="collapse"
+                       aria-expanded="false">products</a></div>
+                <ul id="products" class="list-unstyled collapse">
+                    <li>
+                        <a href="blog-details.html">blog</a></li>
+                    <li>
+                        <a href="about-us.html">about us</a></li>
+                    <li>
+                        <a href="contact-us.html">contact us</a></li>
+                    <li>
+                        <a href="my-account.html">my account</a></li>
+                </ul>
+
+            </div>
+            <div class="col-md-2 footer-column">
+                <div class="title">
+                    <a href="#account" class="font-weight-normal text-capitalize mb-10" data-toggle="collapse"
+                       aria-expanded="false">your account</a></div>
+                <ul id="account" class="list-unstyled collapse">
+                    <li>
+                        <a href="blog-details.html">personal info</a></li>
+                    <li>
+                        <a href="#">orders</a></li>
+                    <li>
+                        <a href="contact-us.html">addresses</a></li>
+                    <li>
+                        <a href="my-account.html">my wishlists</a></li>
+                </ul>
+
+            </div>
+            <div class="col-md-2 footer-column">
+                <div class="title">
+                    <a href="#information" class="font-weight-normal text-capitalize mb-10" data-toggle="collapse"
+                       aria-expanded="false">store information</a></div>
+                <ul id="information" class="list-unstyled collapse">
+                    <li class="contact-detail links">
+              <span class="address">
+			  		<span class="icon"><i class="material-icons">location_on</i></span>
+					<span class="data"> 4030, Central Bazzar, opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat 395006, India</span>			  </span>
+                    </li>
+                    <li class="links">
+               <span class="contact">
+			  		<span class="icon"><i class="material-icons">phone</i></span>
+					<span class="data"><a href="tel:(99)55669999">+ (99) 55-669-999</a></span>			  </span></li>
+                    <li class="links">
+               <span class="email">
+			  		<span class="icon"><i class="material-icons">email</i></span>
+					<span class="data"><a href="mailto:demo.store@gmail.com">demo.store@gmail.com</a></span>  </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Copyright -->
+    <div class="footer-bottom-wrap">
+        <div class="container">
+            <div class="row">
+                <div class="footer-copyright text-center py-3">
+                    © 2019 - Boostrap theme by store™
+                </div>
+            </div>
+        </div>
+    </div>
+    <a href="#" id="goToTop" title="Back to top" class="btn-primary"><i class="material-icons arrow-up">keyboard_arrow_up</i></a>
+
+
+</footer>
+
+
+</body>
+{% endblock %}
+
+
+
+

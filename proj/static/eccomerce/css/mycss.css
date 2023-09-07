@@ -1,0 +1,10 @@
+    /* Увеличьте расстояние между кнопками */
+    .btn-filter {
+        margin-right: 10px; /* Измените на нужное расстояние */
+    }
+
+    /* Примените стили при нажатии */
+     .btn-filter:active {
+        background-color: black;
+        color: white;
+    }

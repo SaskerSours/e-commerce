@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+{% load bootstrap %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<form  method="GET">
+  {{ filter.form | bootstrap}}
+    <button type="submit"></button>
+</form>
+
+{% for product_color in filter.qs %}
+  {{ product_color.product.name }}
+{% endfor %}
+
+</body>
+</html>
