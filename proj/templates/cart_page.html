@@ -40,7 +40,7 @@
                             <td class="table-image"><a href="product-details.html"><img src="{{cart.product.image.url}}"
                                                                                         alt=""></a></td>
                             <td class="table-p-name text-capitalize"><a href="product-details.html">{{ cart.product.model }}</a></td>
-                            <td class="table-p-price"><p>{{ cart.product.price }}</p></td>
+                            <td class="table-p-price"><p>{{ cart.product.get_final_price }}</p></td>
                             <td class="table-p-qty"><p>{{ cart.quantity }}</p>
                                 <a href="{% url 'cart_remove_product' pk=cart.product.pk %}"
                                    class="btn btn-primary btn-cart">
@@ -90,7 +90,7 @@
                             <strong>Total</strong>
                             <span class="c-total-price">$165.00</span>
                         </div>
-                        <a href="checkout_page.html" class="btn btn-primary float-left w-100 text-center">Proceed to
+                        <a href="{% url 'payment_process' username=request.user %}" class="btn btn-primary float-left w-100 text-center">Proceed to
                             checkout</a>
                     </div>
                 </div>
@@ -463,10 +463,10 @@
                             <form action="#">
                                 <input class="btn pull-right mt_10 btn-primary" value="Continue shopping" type="submit">
                             </form>
-                            <form action="checkout_page.html">
-                                <input class="btn pull-right mt_10 btn-primary" value="Proceed to checkout"
+
+                                <a  href="{% url 'payment_process' username=request.user %}" class="btn pull-right mt_10 btn-primary"
                                        type="submit">
-                            </form>
+                                </a>
                         </div>
                     </div>
                 </div>

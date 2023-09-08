@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
 from pathlib import Path
-
+import dotenv
+dotenv.load_dotenv()
 import paypalrestsdk
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -131,7 +132,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'eccomerce3',
         'USER': 'postgres',
-        'PASSWORD': 'qwert321qwe',
+        'PASSWORD': os.getenv("DB_PASSWORD"),
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -195,8 +196,8 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-            'client_id': '428789826954-sqegat471utultei94bivo2v0t5sivh5.apps.googleusercontent.com',
-            'secret': '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',
+            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+            'secret': os.getenv("GOOGLE_SECRET"),
         },
         'email': True,  # Запрашивати email у Google
         'PASSWORD_INPUT': True,  # Дозволити вводити пароль
@@ -204,10 +205,10 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 PAYPAL_TEST = True
-PAYPAL_RECEIVER_EMAIL = 'sb-mhxja23613163@business.example.com'
+PAYPAL_RECEIVER_EMAIL = os.getenv("PAYPAL_RECEIVER_EMAIL"),
 
 paypalrestsdk.configure({
     "mode": "sandbox",  # "sandbox" для тестового режима, "live" для продакшена
-    "client_id": "AWdLx8D42aAXl_i7n0kxRL5UfVlY9nQVxcDPU_ozbU8ICIIk5-FPdY3O3EmIqIKt-mGfUKnQNPQeGMav",
-    "client_secret": "EFlvllZN0CNBInZ84PExe2kFBOEE68BTNttWfYbuRT3PRrokElRd3EyJurs-ibbvuwlwcf1tI58Q-Shk"
+    "client_id": os.getenv("PAYPAL_CLIENT_ID"),
+    "client_secret": os.getenv("PAYPAL_CLIENT_SECRET"),
 })

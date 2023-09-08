@@ -1,20 +1,23 @@
+import random
+import uuid
+
 import paypalrestsdk
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.messages import add_message
 from django.contrib.messages.context_processors import messages
 from django.core.paginator import Paginator
+from django.db.models import Sum
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-
 from django.views.generic import ListView, DetailView, FormView, TemplateView
 from paypal.standard.forms import PayPalPaymentsForm
 
 from .filters import ProductFilter, filter_products_by_color_and_size
 from .forms import CommentsForm, ReplyForm
 from .models import Product, ProductImages, ProductColor, User, Wishlist, Blog, BlogCategories, Comments, Color, \
-    Size, Cartt, CartItemm, ComparedProduct
+    Size, Cartt, CartItemm, ComparedProduct, CartOrderItem
 
 
 def prod(request):
@@ -415,42 +418,51 @@ class ComparePage(DetailView):
         return context
 
 
-class CheckoutPage(ListView):
-    template_name = 'checkout_page.html'
-    model = CartItemm
+# class CheckoutPage(ListView):
+#     template_name = 'checkout_page.html'
+#     model = CartItemm
 
 
-def payment_process(request):
+def payment_process(request, username):
+    user = get_object_or_404(User, username=username)
+    cart_order_products = CartItemm.objects.filter(user=user)
+    invoice_num = str(uuid.uuid4())
+
+    for cart_item in cart_order_products:
+        CartOrderItem.objects.create(user=user, cart_order=cart_item, invoice_no=invoice_num)
+
     host = request.get_host()
+    total_amount = sum(cart_item.total() for cart_item in cart_order_products)
+
     paypal_dict = {
         'business': settings.PAYPAL_RECEIVER_EMAIL,
-        'amount': '101',
-        'item_name': 'Item_Name_xyz',
-        'invoice': 'Test Payment Invoice',
+        'amount': str(total_amount),
+        'item_name': 'Order-Item-No-' + invoice_num,
+        'invoice': 'INVOICE_NO-' + invoice_num,
         'currency_code': 'USD',
         'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
         'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
         'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
     }
     form = PayPalPaymentsForm(initial=paypal_dict)
-    return render(request, 'core/payment_process.html', {'form': form})
+    return render(request, 'checkout_page.html',
+                  {'form': form, 'total_amount': total_amount, 'cart_order_products': cart_order_products})
 
-
-class PaymentDoneView(TemplateView):
-    template_name = 'payment_done.html'
-
-    def get(self, request, *args, **kwargs):
-        payer_id = request.GET.get('PayerID')
-
-        if payer_id:
-            payment_id = request.session.get('payment_id')
-
-            if payment_id:
-                payment = paypalrestsdk.Payment.find(payment_id)
-                your_model_instance = YourModel.objects.create(payment_id=payment_id)
-                your_model_instance.save()
-
-                if payment.execute({"payer_id": payer_id}):
-                    return super().get(request, *args, **kwargs)
-
-        return HttpResponseRedirect(reverse('payment_canceled'))
+# class PaymentDoneView(TemplateView):
+#     template_name = 'payment_done.html'
+#
+#     def get(self, request, *args, **kwargs):
+#         payer_id = request.GET.get('PayerID')
+#
+#         if payer_id:
+#             payment_id = request.session.get('payment_id')
+#
+#             if payment_id:
+#                 payment = paypalrestsdk.Payment.find(payment_id)
+#                 your_model_instance = YourModel.objects.create(payment_id=payment_id)
+#                 your_model_instance.save()
+#
+#                 if payment.execute({"payer_id": payer_id}):
+#                     return super().get(request, *args, **kwargs)
+#
+#         return HttpResponseRedirect(reverse('payment_canceled'))

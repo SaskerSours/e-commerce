@@ -12,6 +12,12 @@ from multiselectfield import MultiSelectField
 
 User = get_user_model()
 
+STATUS_CHOICE = (
+    ('process', 'Processing'),
+    ('shipped', 'Shipped'),
+    ('delivered', 'Delivered'),
+)
+
 
 class Product(models.Model):
     SIZE_CHOICES = [
@@ -135,12 +141,20 @@ class CartItemm(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cartitems')
     cart = models.ForeignKey(Cartt, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
+    paid_status = models.BooleanField(default=False)
 
     def __str__(self):
         return self.product.model
 
     def total(self):
         return self.product.get_final_price() * self.quantity
+
+
+class CartOrderItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    cart_order = models.ForeignKey(CartItemm, on_delete=models.CASCADE)
+    invoice_no = models.CharField(max_length=200)
+    product_status = models.CharField(choices=STATUS_CHOICE, max_length=30, default='processing')
 
 
 class BlogCategories(models.Model):

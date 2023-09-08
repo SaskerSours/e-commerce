@@ -1,4 +1,6 @@
 from django.urls import path, include
+from django.views.generic import TemplateView
+
 from proj import views
 from proj.views import ProductDetailView, reply_to_comment
 
@@ -24,10 +26,10 @@ urlpatterns = [
     path('cart-page/<str:username>', views.CartPage.as_view(), name='cart_page'),
     path('remove-obj-cart/<int:pk>', views.remove_quantity_from_cart, name='remove_obj_cart'),
     path('cart-remove-product/<int:pk>', views.cart_remove_product, name='cart_remove_product'),
-    path('checkout', views.CheckoutPage.as_view(), name='checkout'),
 
     path('compare/<str:username>', views.ComparePage.as_view(), name='compare'),
     path('add-compare-product/<int:pk>', views.add_compare_product, name='add_compare_product'),
     path('remove-compare-product/<int:pk>', views.remove_compare_product, name='remove_compare_product'),
+    path('order-confirmation', TemplateView.as_view(template_name='order-confirmation.html'), name='order_confirmation')
 
 ]
