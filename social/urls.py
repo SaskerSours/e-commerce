@@ -6,10 +6,9 @@ from django.views.generic import TemplateView
 
 from proj import views
 from users.views import FakeSocialSignup, FakeConfirmEmailView
-from paypal.standard.ipn import views as paypal_views
 
 urlpatterns = [
-    path("admin", admin.site.urls),
+    path("admin/", admin.site.urls),
     # path("fake/accounts/social/signup", FakeSocialSignup.as_view()),
     # path("fake/accounts/confirm-email", FakeConfirmEmailView.as_view()),
     path("accounts/", include("allauth.urls")),
@@ -17,7 +16,7 @@ urlpatterns = [
     path("__debug__/", include("debug_toolbar.urls")),
     path('', include('proj.urls')),
     path('paypal/', include('paypal.standard.ipn.urls')),
-    path('payment_process/<str:username>', views.payment_process, name='payment_process'),
+    # path('payment_process/<str:username>', views.payment_process, name='payment_process'),
     path('payment_done/', TemplateView.as_view(template_name="core/paypal_success.html"), name='payment_done'),
     path('payment_canceled/', TemplateView.as_view(template_name="core/paypal_canceled.html"), name='payment_canceled'),
 

@@ -17,6 +17,10 @@ STATUS_CHOICE = (
     ('shipped', 'Shipped'),
     ('delivered', 'Delivered'),
 )
+ADDRESS_CHOICES = (
+    ('B', 'Billing'),
+    ('S', 'Shipping'),
+)
 
 
 class Product(models.Model):
@@ -39,6 +43,7 @@ class Product(models.Model):
     image = models.ImageField(blank=True, upload_to='products/')
     date_created = models.DateTimeField(auto_now_add=True)
     countdown_target = models.DateTimeField(null=True, blank=True)
+    slug = models.SlugField()
 
     def time_remaining(self):
         if self.countdown_target:
@@ -126,35 +131,73 @@ class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-class Cartt(models.Model):
-    cart_id = models.CharField(max_length=250, blank=True, unique=True)
+# class Cartt(models.Model):
+#     cart_id = models.CharField(max_length=250, blank=True, unique=True)
+#
+#     class Meta:
+#         db_table = 'Cart'
+#
+#     def __str__(self):
+#         return self.cart_id
 
-    class Meta:
-        db_table = 'Cart'
 
-    def __str__(self):
-        return self.cart_id
-
-
-class CartItemm(models.Model):
+class OrderProduct(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cartitems')
-    cart = models.ForeignKey(Cartt, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=0)
-    paid_status = models.BooleanField(default=False)
+    item = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='orderproduct')
+    # cart = models.ForeignKey(Cartt, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    ordered = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.product.model
+        return self.item.model
 
     def total(self):
-        return self.product.get_final_price() * self.quantity
+        return self.item.get_final_price() * self.quantity
 
 
-class CartOrderItem(models.Model):
+class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    cart_order = models.ForeignKey(CartItemm, on_delete=models.CASCADE)
+    items = models.ManyToManyField(OrderProduct)
     invoice_no = models.CharField(max_length=200)
     product_status = models.CharField(choices=STATUS_CHOICE, max_length=30, default='processing')
+    ordered = models.BooleanField(default=False)
+    ordered_date = models.DateTimeField(default=None, null=True, blank=True)
+    shipping_address = models.ForeignKey(
+        'Address', related_name='shipping_address', on_delete=models.SET_NULL, blank=True, null=True)
+    billing_address = models.ForeignKey(
+        'Address', related_name='billing_address', on_delete=models.SET_NULL, blank=True, null=True)
+    coupon = models.ForeignKey(
+        'Coupon', on_delete=models.SET_NULL, blank=True, null=True)
+    being_delivered = models.BooleanField(default=False)
+    received = models.BooleanField(default=False)
+    refund_requested = models.BooleanField(default=False)
+    refund_granted = models.BooleanField(default=False)
+
+
+
+
+class Address(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    street_address = models.CharField(max_length=100)
+    apartment_address = models.CharField(max_length=100)
+    country = CountryField(multiple=False)
+    zip = models.CharField(max_length=100)
+    address_type = models.CharField(max_length=1, choices=ADDRESS_CHOICES)
+    default = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
+
+    class Meta:
+        verbose_name_plural = 'Addresses'
+
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=15)
+    amount = models.FloatField()
+
+    def __str__(self):
+        return self.code
 
 
 class BlogCategories(models.Model):

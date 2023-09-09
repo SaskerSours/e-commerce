@@ -4,20 +4,23 @@ import uuid
 import paypalrestsdk
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.messages import add_message
-from django.contrib.messages.context_processors import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
+from django.utils import timezone
+from django.views import View
 from django.views.generic import ListView, DetailView, FormView, TemplateView
 from paypal.standard.forms import PayPalPaymentsForm
+from django.contrib import messages
 
 from .filters import ProductFilter, filter_products_by_color_and_size
 from .forms import CommentsForm, ReplyForm
 from .models import Product, ProductImages, ProductColor, User, Wishlist, Blog, BlogCategories, Comments, Color, \
-    Size, Cartt, CartItemm, ComparedProduct, CartOrderItem
+    Size, ComparedProduct, OrderProduct, Order
 
 
 def prod(request):
@@ -286,84 +289,180 @@ def _cart_id(request):
     return cart
 
 
-def add_cart(request, pk):
-    try:
-        product = Product.objects.get(id=pk)
-    except Product.DoesNotExist:
-        pass
-    cart = Cartt.objects.filter(cart_id=_cart_id(request)).first()
-    if not cart:
-        cart = Cartt.objects.create(cart_id=_cart_id(request))
-        cart.save()
-
-    try:
-        cart_item = CartItemm.objects.filter(product=product, cart=cart, user=request.user).first()
-        if cart_item:
-            cart_item.quantity += 1
-            cart_item.save()
+def add_to_cart(request, pk):
+    item = get_object_or_404(Product, id=pk)
+    order_item, created = OrderProduct.objects.get_or_create(
+        item=item,
+        user=request.user,
+        ordered=False
+    )
+    order_qs = Order.objects.filter(user=request.user, ordered=False)
+    if order_qs.exists():
+        order = order_qs[0]
+        # check if the order item is in the order
+        if order.items.filter(item__slug=item.slug).exists():
+            order_item.quantity += 1
+            order_item.save()
+            messages.info(request, "This item quantity was updated.")
+            return redirect('index')
         else:
-            cart_item = CartItemm.objects.create(product=product, quantity=1, cart=cart, user=request.user)
-            cart_item.save()
-    except CartItemm.DoesNotExist:
-        pass
-
-    return redirect('cart_page', username=request.user)
-
-
-def remove_quantity_from_cart(request, pk):
-    try:
-        product = get_object_or_404(Product, id=pk)
-    except Product.DoesNotExist:
-        pass
-    cart = Cartt.objects.get(cart_id=_cart_id(request))
-    cart_item = CartItemm.objects.get(product=product, cart=cart)
-    if cart_item:
-        if cart_item.quantity > 1:
-            cart_item.quantity -= 1
-            cart_item.save()
-        else:
-            cart_item.delete()
+            order.items.add(order_item)
+            messages.info(request, "This item was added to your cart.")
+            return redirect('index')
     else:
-        return redirect('index')
-    return redirect('cart_page', username=request.user)
+        ordered_date = timezone.now()
+        order = Order.objects.create(
+            user=request.user, ordered_date=ordered_date)
+        order.items.add(order_item)
+        messages.info(request, "This item was added to your cart.")
+        return redirect("core:order-summary")
 
 
-def cart_remove_product(request, pk):
-    try:
-        product = get_object_or_404(Product, id=pk)
-    except Product.DoesNotExist:
-        pass
-    cart = Cartt.objects.get(cart_id=_cart_id(request))
-    try:
-        cart_item = CartItemm.objects.get(product=product, cart=cart)
-    except CartItemm.DoesNotExist:
-        return redirect('index')
-    cart_item.delete()
+def remove_from_cart(request, pk):
+    item = get_object_or_404(Product, id=pk)
+    order_qs = Order.objects.filter(
+        user=request.user,
+        ordered=False
+    )
+    if order_qs.exists():
+        order = order_qs[0]
+        # check if the order item is in the order
+        if order.items.filter(item__slug=item.slug).exists():
+            order_item = OrderProduct.objects.filter(
+                item=item,
+                user=request.user,
+                ordered=False
+            )[0]
+            order.items.remove(order_item)
+            order_item.delete()
+            messages.info(request, "This item was removed from your cart.")
+            return redirect('index')
+        else:
+            messages.info(request, "This item was not in your cart")
+            return redirect('product', id=pk)
+    else:
+        messages.info(request, "You do not have an active order")
+        return redirect('product', id=pk)
 
-    return redirect('cart_page', username=request.user)
+
+def remove_single_item_from_cart(request, pk):
+    item = get_object_or_404(Product, id=pk)
+    order_qs = Order.objects.filter(
+        user=request.user,
+        ordered=False
+    )
+    if order_qs.exists():
+        order = order_qs[0]
+        # check if the order item is in the order
+        if order.items.filter(item__slug=item.slug).exists():
+            order_item = OrderProduct.objects.filter(
+                item=item,
+                user=request.user,
+                ordered=False
+            )[0]
+            if order_item.quantity > 1:
+                order_item.quantity -= 1
+                order_item.save()
+            else:
+                order.items.remove(order_item)
+                order.items.remove(order_item)
+                messages.info(request, "This item quantity was updated.")
+                return redirect('order-summary')
+        else:
+            messages.info(request, "This item was not in your cart")
+            return redirect('product', id=pk)
+    else:
+        messages.info(request, "You do not have an active order")
+        return redirect('product', id=pk)
 
 
-class CartPage(DetailView):
-    template_name = 'cart_page.html'
-    model = CartItemm
+# def add_cart(request, pk):
+#     try:
+#         product = Product.objects.get(id=pk)
+#     except Product.DoesNotExist:
+#         pass
+#     cart = Cartt.objects.filter(cart_id=_cart_id(request)).first()
+#     if not cart:
+#         cart = Cartt.objects.create(cart_id=_cart_id(request))
+#         cart.save()
+#
+#     try:
+#         cart_item = CartItemm.objects.filter(product=product, cart=cart, user=request.user).first()
+#         if cart_item:
+#             cart_item.quantity += 1
+#             cart_item.save()
+#         else:
+#             cart_item = CartItemm.objects.create(product=product, quantity=1, cart=cart, user=request.user)
+#             cart_item.save()
+#     except CartItemm.DoesNotExist:
+#         pass
+#
+#     return redirect('cart_page', username=request.user)
+#
+#
+# def remove_quantity_from_cart(request, pk):
+#     try:
+#         product = get_object_or_404(Product, id=pk)
+#     except Product.DoesNotExist:
+#         pass
+#     cart = Cartt.objects.get(cart_id=_cart_id(request))
+#     cart_item = CartItemm.objects.get(product=product, cart=cart)
+#     if cart_item:
+#         if cart_item.quantity > 1:
+#             cart_item.quantity -= 1
+#             cart_item.save()
+#         else:
+#             cart_item.delete()
+#     else:
+#         return redirect('index')
+#     return redirect('cart_page', username=request.user)
+#
+#
+# def cart_remove_product(request, pk):
+#     try:
+#         product = get_object_or_404(Product, id=pk)
+#     except Product.DoesNotExist:
+#         pass
+#     cart = Cartt.objects.get(cart_id=_cart_id(request))
+#     try:
+#         cart_item = CartItemm.objects.get(product=product, cart=cart)
+#     except CartItemm.DoesNotExist:
+#         return redirect('index')
+#     cart_item.delete()
+#
+#     return redirect('cart_page', username=request.user)
+#
+#
+# class CartPage(DetailView):
+#     template_name = 'cart_page.html'
+#     model = Order
+#     context_object_name = 'orders'
+#
+#     def get_object(self, queryset=None):
+#         order = Order.objects.get(user=self.request.user, ordered=False)
+#         return order
 
-    def get_object(self, queryset=None):
-        username = self.kwargs['username']
-        user = get_object_or_404(User, username=username)
-        return user
+class CartPage(LoginRequiredMixin, View):
+    def get(self, *args, **kwargs):
+        try:
+            order = Order.objects.get(user=self.request.user, ordered=False)
+            sub_total = sum(cart_item.total() for cart_item in order.items.all())
 
-    def get_queryset(self):
-        user = self.get_object()
-        queryset = CartItemm.objects.filter(user=user)
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['carts'] = self.get_queryset()
-        cart_items = self.get_queryset()
-        cart_total = sum(cart_item.total() for cart_item in cart_items)
-        context['cart_total'] = cart_total
-        return context
+            context = {
+                'object': order,
+                'sub_total': sub_total
+            }
+            return render(self.request, 'cart_page.html', context)
+        except ObjectDoesNotExist:
+            messages.warning(self.request, "You do not have an active order")
+            return redirect("/")
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context['order'] = self.get_object()
+    #     cart_items = self.get_object()
+    #     cart_total = sum(cart_item.total() for cart_item in cart_items)
+    #     context['cart_total'] = cart_total
+    #     return context
 
 
 def add_compare_product(request, pk):
@@ -417,36 +516,35 @@ class ComparePage(DetailView):
         context['compares'] = ComparedProduct.objects.get(user=user)
         return context
 
-
 # class CheckoutPage(ListView):
 #     template_name = 'checkout_page.html'
 #     model = CartItemm
 
 
-def payment_process(request, username):
-    user = get_object_or_404(User, username=username)
-    cart_order_products = CartItemm.objects.filter(user=user)
-    invoice_num = str(uuid.uuid4())
-
-    for cart_item in cart_order_products:
-        CartOrderItem.objects.create(user=user, cart_order=cart_item, invoice_no=invoice_num)
-
-    host = request.get_host()
-    total_amount = sum(cart_item.total() for cart_item in cart_order_products)
-
-    paypal_dict = {
-        'business': settings.PAYPAL_RECEIVER_EMAIL,
-        'amount': str(total_amount),
-        'item_name': 'Order-Item-No-' + invoice_num,
-        'invoice': 'INVOICE_NO-' + invoice_num,
-        'currency_code': 'USD',
-        'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
-        'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
-        'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
-    }
-    form = PayPalPaymentsForm(initial=paypal_dict)
-    return render(request, 'checkout_page.html',
-                  {'form': form, 'total_amount': total_amount, 'cart_order_products': cart_order_products})
+# def payment_process(request, username):
+#     user = get_object_or_404(User, username=username)
+#     cart_order_products = CartItemm.objects.filter(user=user)
+#     invoice_num = str(uuid.uuid4())
+#
+#     for cart_item in cart_order_products:
+#         CartOrderItem.objects.create(user=user, cart_order=cart_item, invoice_no=invoice_num)
+#
+#     host = request.get_host()
+#     total_amount = sum(cart_item.total() for cart_item in cart_order_products)
+#
+#     paypal_dict = {
+#         'business': settings.PAYPAL_RECEIVER_EMAIL,
+#         'amount': str(total_amount),
+#         'item_name': 'Order-Item-No-' + invoice_num,
+#         'invoice': 'INVOICE_NO-' + invoice_num,
+#         'currency_code': 'USD',
+#         'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
+#         'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
+#         'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
+#     }
+#     form = PayPalPaymentsForm(initial=paypal_dict)
+#     return render(request, 'checkout_page.html',
+#                   {'form': form, 'total_amount': total_amount, 'cart_order_products': cart_order_products})
 
 # class PaymentDoneView(TemplateView):
 #     template_name = 'payment_done.html'
