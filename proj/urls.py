@@ -10,7 +10,7 @@ urlpatterns = [
     path('trololo', views.ProductLa.as_view(), name='produc'),
 
     path('index', views.ProductListView.as_view(), name='index'),
-    path('products/<int:pk>', ProductDetailView.as_view(), name='product_detail'),
+    path('products/<slug>', ProductDetailView.as_view(), name='product_detail'),
     path('canvas', views.Canvas.as_view(), name='canvas'),
 
     path('wishlist/<str:username>/', views.WishListUser.as_view(), name='wishlist_by_username'),
@@ -22,10 +22,13 @@ urlpatterns = [
     path('reply-comment/<int:pk>', reply_to_comment, name='reply_to_comment'),
     path('blog-categories/<slug:slug>/', views.BlogCategoriesList.as_view(), name='blog-categories'),
 
-    path('cart/add/<int:pk>', views.add_to_cart, name='add_to_cart'),
+    path('cart/add/<slug>', views.add_to_cart, name='add_to_cart'),
     path('cart-page', views.CartPage.as_view(), name='cart_page'),
-    # path('remove-obj-cart/<int:pk>', views.remove_quantity_from_cart, name='remove_obj_cart'),
+    path('remove-single-item/<slug>', views.remove_single_item_from_cart, name='remove_single_item_from_cart'),
     # path('cart-remove-product/<int:pk>', views.cart_remove_product, name='cart_remove_product'),
+    path('checkout', views.CheckoutView.as_view(), name='checkout'),
+
+    path('payment/<payment_option>/', views.PaymentView.as_view(), name='payment'),
 
     path('compare/<str:username>', views.ComparePage.as_view(), name='compare'),
     path('add-compare-product/<int:pk>', views.add_compare_product, name='add_compare_product'),

@@ -37,24 +37,21 @@
                             <td class="table-remove">
                                 <button><i class="material-icons">delete</i></button>
                             </td>
-                            <td class="table-image"><a href="product-details.html"><img src="{{order_item.item.image.url}}"
-                                                                                        alt=""></a></td>
+                            <td class="table-image"><a href="product-details.html"><img
+                                    src="{{order_item.item.image.url}}"
+                                    alt=""></a></td>
                             <td class="table-p-name text-capitalize"><a href="product-details.html">{{ order_item.item.model }}</a></td>
                             <td class="table-p-price"><p>{{ order_item.item.get_final_price }}</p></td>
-                            <td class="table-p-qty"><p>{{ order_item.item.quantity }}</p>
-                                <a href=""
+                            <td class="table-p-qty"><p>{{ order_item.quantity }}</p>
+                                <a href="{% url 'add_to_cart' order_item.item.slug %}"
                                    class="btn btn-primary btn-cart">
-                                    <i class="material-icons">shopping_cart</i><span>Remove full product from the cart</span>
+                                    <i class="material-icons">add</i>
                                 </a>
-                                <a href=""
+                                <a href="{% url 'remove_single_item_from_cart' order_item.item.slug %}"
                                    class="btn btn-primary btn-cart">
-                                    <i class="material-icons">shopping_cart</i><span>Remove from the cart</span>
-                                </a>
-                                <a href=""
-                                   class="btn btn-primary btn-cart">
-                                    <i class="material-icons">shopping_cart</i><span>Add to cart</span>
+                                    <i class="material-icons">remove</i>
                                 </a></td>
-                            <td class="table-total"><p>{{ order_item.item.total }}</p></td>
+                            <td class="table-total"><p>{{ order_item.total }}</p></td>
                         </tr>
                         </tbody>
                         {% endfor %}
@@ -90,7 +87,7 @@
                             <strong>Total</strong>
                             <span class="c-total-price">$165.00</span>
                         </div>
-                        <a href="" class="btn btn-primary float-left w-100 text-center">Proceed to
+                        <a href="{% url 'checkout' %}" class="btn btn-primary float-left w-100 text-center">Proceed to
                             checkout</a>
                     </div>
                 </div>
@@ -464,9 +461,9 @@
                                 <input class="btn pull-right mt_10 btn-primary" value="Continue shopping" type="submit">
                             </form>
 
-                                <a  href="" class="btn pull-right mt_10 btn-primary"
-                                       type="submit">
-                                </a>
+                            <a href="" class="btn pull-right mt_10 btn-primary"
+                               type="submit">
+                            </a>
                         </div>
                     </div>
                 </div>

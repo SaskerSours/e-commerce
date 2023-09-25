@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import Product, Review, ProductImages, ProductColor, ProductSize, Color, Size, Wishlist, Blog, \
-    BlogCategories, Tags, Comments, Reply, ComparedProduct, Transaction, OrderProduct, Order, Address, Coupon
+    BlogCategories, Tags, Comments, Reply, ComparedProduct, OrderProduct, Order, Address, Coupon
 
 admin.site.register(Review)
 
@@ -30,7 +30,6 @@ admin.site.register(Coupon)
 
 
 admin.site.register(ComparedProduct)
-admin.site.register(Transaction)
 
 
 class ProductColorAdmin(admin.StackedInline):

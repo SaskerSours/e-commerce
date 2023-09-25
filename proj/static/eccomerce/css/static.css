@@ -15,3 +15,4 @@ body::before {
   border-bottom: 2px solid black;
   content: "Error: Undefined variable.\a    \2577 \a 18 \2502              border: 1px solid $border-color!important;\d\a    \2502                                ^^^^^^^^^^^^^\a    \2575 \a   scss\\static.scss 18:22  root stylesheet";
 }
+

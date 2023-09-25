@@ -75,6 +75,8 @@ THIRD_PARTY_APPS = [
     'bootstrapform',
     'paypal.standard.ipn',
     'django_countries',
+    'crispy_forms',
+
 ]
 # "allauth.socialaccount.providers.linkedin",
 #   "allauth.socialaccount.providers.digitalocean",
