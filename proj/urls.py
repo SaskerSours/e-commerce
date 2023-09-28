@@ -28,7 +28,8 @@ urlpatterns = [
     # path('cart-remove-product/<int:pk>', views.cart_remove_product, name='cart_remove_product'),
     path('checkout', views.CheckoutView.as_view(), name='checkout'),
 
-    path('payment/<payment_option>/', views.PaymentView.as_view(), name='payment'),
+    # path('paypal-ipn/', views.paypal_ipn, name='paypal_ipn'),
+    path('payment', views.payment_process, name='payment'),
 
     path('compare/<str:username>', views.ComparePage.as_view(), name='compare'),
     path('add-compare-product/<int:pk>', views.add_compare_product, name='add_compare_product'),

@@ -72,3 +72,9 @@ class CouponForm(forms.Form):
         'aria-label': 'Recipient\'s username',
         'aria-describedby': 'basic-addon2'
     }))
+
+
+class PaymentForm(forms.Form):
+    stripeToken = forms.CharField(required=False)
+    save = forms.BooleanField(required=False)
+    use_default = forms.BooleanField(required=False)

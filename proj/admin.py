@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import Product, Review, ProductImages, ProductColor, ProductSize, Color, Size, Wishlist, Blog, \
-    BlogCategories, Tags, Comments, Reply, ComparedProduct, OrderProduct, Order, Address, Coupon
+    BlogCategories, Tags, Comments, Reply, ComparedProduct, OrderProduct, Order, Address, Coupon, Payment
 
 admin.site.register(Review)
 
@@ -27,6 +27,7 @@ admin.site.register(Order)
 
 admin.site.register(Address)
 admin.site.register(Coupon)
+admin.site.register(Payment)
 
 
 admin.site.register(ComparedProduct)

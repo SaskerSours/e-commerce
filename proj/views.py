@@ -1,3 +1,4 @@
+import os
 import random
 import uuid
 
@@ -8,19 +9,20 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db.models import Sum
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, DetailView, FormView, TemplateView
 from paypal.standard.forms import PayPalPaymentsForm
 from django.contrib import messages
 
 from .filters import ProductFilter, filter_products_by_color_and_size
-from .forms import CommentsForm, ReplyForm, CheckoutForm, CouponForm
+from .forms import CommentsForm, ReplyForm, CheckoutForm, CouponForm, PaymentForm
 from .models import Product, ProductImages, ProductColor, User, Wishlist, Blog, BlogCategories, Comments, Color, \
-    Size, ComparedProduct, OrderProduct, Order, Address
+    Size, ComparedProduct, OrderProduct, Order, Address, Payment
 
 
 def is_valid_form(values):
@@ -578,9 +580,9 @@ class CheckoutView(View):
                 payment_option = form.cleaned_data.get('payment_option')
 
                 if payment_option == 'S':
-                    return redirect('payment', payment_option='stripe')
+                    return redirect('payment')
                 elif payment_option == 'P':
-                    return redirect('payment', payment_option='paypal')
+                    return redirect('payment')
                 else:
                     messages.warning(
                         self.request, "Invalid payment option selected")
@@ -590,20 +592,51 @@ class CheckoutView(View):
             return redirect("cart_page")
 
 
-
-class PaymentView(View):
-    def get(self, *args, **kwargs):
-        order = Order.objects.get(user=self.request.user, ordered=False)
-        if order.billing_address:
-            context = {
-                'order': order,
-                'DISPLAY_COUPON_FORM': False,
-            }
-            return render(self.request, "payment.html", context)
-        else:
-            messages.warning(
-                self.request, "You have not added a billing address")
-            return redirect("checkout")
+#
+# class PaymentView(View):
+#     def get(self, *args, **kwargs):
+#         order = Order.objects.get(user=self.request.user, ordered=False)
+#         if order.billing_address:
+#             form = PayPalPaymentsForm()
+#             context = {
+#                 'order': order,
+#                 'DISPLAY_COUPON_FORM': False,
+#                 'form': form
+#             }
+#             return render(self.request, "core/payment_process.html", context)
+#         else:
+#             messages.warning(
+#                 self.request, "You have not added a billing address")
+#             return redirect("checkout")
+#
+#     def post(self, *args, **kwargs):
+#         try:
+#             order = Order.objects.get(user=self.request.user)
+#             host = self.request.get_host()
+#             total_amount = order.get_total()
+#
+#             payment = Payment()
+#             payment.user = self.request.user
+#             payment.amount = total_amount
+#             payment.save()
+#
+#             paypal_dict = {
+#                 'business': settings.PAYPAL_RECEIVER_EMAIL,
+#                 'amount': str(total_amount),
+#                 'item_name': f'Order-Item-No-{order.pk}',
+#                 'invoice': f'INVOICE_NO-{str(payment.payment_id)}',
+#                 'currency_code': 'USD',
+#                 'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
+#                 'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
+#                 'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
+#             }
+#             form = PayPalPaymentsForm(initial=paypal_dict)
+#             return render(self.request, 'core/payment_process.html',
+#                           {'form': form, 'total_amount': total_amount})
+#         except ObjectDoesNotExist:
+#             messages.warning(
+#                 self.request, "You have not a order to pay")
+#             return redirect("checkout")
 
 
 def add_compare_product(request, pk):
@@ -657,51 +690,34 @@ class ComparePage(DetailView):
         context['compares'] = ComparedProduct.objects.get(user=user)
         return context
 
-# class CheckoutPage(ListView):
-#     template_name = 'checkout_page.html'
-#     model = CartItemm
 
-
-# def payment_process(request, username):
-#     user = get_object_or_404(User, username=username)
-#     cart_order_products = CartItemm.objects.filter(user=user)
-#     invoice_num = str(uuid.uuid4())
-#
-#     for cart_item in cart_order_products:
-#         CartOrderItem.objects.create(user=user, cart_order=cart_item, invoice_no=invoice_num)
-#
-#     host = request.get_host()
-#     total_amount = sum(cart_item.total() for cart_item in cart_order_products)
-#
-#     paypal_dict = {
-#         'business': settings.PAYPAL_RECEIVER_EMAIL,
-#         'amount': str(total_amount),
-#         'item_name': 'Order-Item-No-' + invoice_num,
-#         'invoice': 'INVOICE_NO-' + invoice_num,
-#         'currency_code': 'USD',
-#         'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
-#         'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
-#         'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
-#     }
-#     form = PayPalPaymentsForm(initial=paypal_dict)
-#     return render(request, 'checkout_page.html',
-#                   {'form': form, 'total_amount': total_amount, 'cart_order_products': cart_order_products})
-
-# class PaymentDoneView(TemplateView):
-#     template_name = 'payment_done.html'
-#
-#     def get(self, request, *args, **kwargs):
-#         payer_id = request.GET.get('PayerID')
-#
-#         if payer_id:
-#             payment_id = request.session.get('payment_id')
-#
-#             if payment_id:
-#                 payment = paypalrestsdk.Payment.find(payment_id)
-#                 your_model_instance = YourModel.objects.create(payment_id=payment_id)
-#                 your_model_instance.save()
-#
-#                 if payment.execute({"payer_id": payer_id}):
-#                     return super().get(request, *args, **kwargs)
-#
-#         return HttpResponseRedirect(reverse('payment_canceled'))
+def payment_process(request):
+    try:
+        order = Order.objects.get(user=request.user)
+        host = request.get_host()
+        total_amount = order.get_total()
+        custom_payment_id = str(uuid.uuid4().hex)
+        paypal_dict = {
+            'business': os.getenv("PAYPAL_RECEIVER_EMAIL"),
+            'amount': str(total_amount),
+            'item_name': f'Order-Item-No-{order.pk}',
+            'invoice': f'{custom_payment_id}',
+            'currency_code': 'USD',
+            'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
+            'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
+            'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
+        }
+        payment = Payment()
+        payment.user = request.user
+        payment.amount = total_amount
+        payment.payment_id = custom_payment_id
+        payment.save()
+        order.payment = payment
+        order.save()
+        form = PayPalPaymentsForm(initial=paypal_dict)
+        return render(request, 'core/payment_process.html',
+                      {'form': form, 'total_amount': total_amount})
+    except ObjectDoesNotExist:
+        messages.warning(
+            request, "You have not a order to pay")
+    return redirect("checkout")
