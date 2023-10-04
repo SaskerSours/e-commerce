@@ -22,15 +22,16 @@ ADDRESS_CHOICES = (
     ('S', 'Shipping'),
 )
 
+SIZE_CHOICES = [
+    ('XS', 'XS'),
+    ('S', 'S'),
+    ('M', 'M'),
+    ('L', 'L'),
+    ('XL', 'XL'),
+]
+
 
 class Product(models.Model):
-    SIZE_CHOICES = [
-        ('XS', 'XS'),
-        ('S', 'S'),
-        ('M', 'M'),
-        ('L', 'L'),
-        ('XL', 'XL'),
-    ]
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     model = models.CharField(max_length=100)
@@ -39,7 +40,8 @@ class Product(models.Model):
     summary = models.TextField()
     weight = models.FloatField()
     dimensions = models.CharField(max_length=100)
-    size = models.CharField(max_length=2, choices=SIZE_CHOICES, blank=True)
+    colors = models.ManyToManyField('Color', blank=True)
+    sizes = models.ManyToManyField('Size', blank=True)
     image = models.ImageField(blank=True, upload_to='products/')
     date_created = models.DateTimeField(auto_now_add=True)
     countdown_target = models.DateTimeField(null=True, blank=True)
@@ -99,24 +101,11 @@ class Color(models.Model):
         return self.name
 
 
-class ProductColor(models.Model):
-    product = models.ForeignKey(Product, default=None, on_delete=models.CASCADE)
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.product.model
-
-
 class Size(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
-
-
-class ProductSize(models.Model):
-    product = models.ForeignKey(Product, default=None, on_delete=models.CASCADE)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
 
 
 class Review(models.Model):
@@ -131,22 +120,15 @@ class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-# class Cartt(models.Model):
-#     cart_id = models.CharField(max_length=250, blank=True, unique=True)
-#
-#     class Meta:
-#         db_table = 'Cart'
-#
-#     def __str__(self):
-#         return self.cart_id
-
-
 class OrderProduct(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     item = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='orderproduct')
-    # cart = models.ForeignKey(Cartt, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     ordered = models.BooleanField(default=False)
+
+    weight = models.FloatField()
+    dimension = models.CharField(max_length=100)
+    size = models.CharField(max_length=2, choices=SIZE_CHOICES, blank=True)
 
     def __str__(self):
         return self.item.model

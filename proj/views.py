@@ -19,9 +19,9 @@ from django.views.generic import ListView, DetailView, FormView, TemplateView
 from paypal.standard.forms import PayPalPaymentsForm
 from django.contrib import messages
 
-from .filters import ProductFilter, filter_products_by_color_and_size
+from .filters import filter_products_by_color_and_size
 from .forms import CommentsForm, ReplyForm, CheckoutForm, CouponForm, PaymentForm
-from .models import Product, ProductImages, ProductColor, User, Wishlist, Blog, BlogCategories, Comments, Color, \
+from .models import Product, ProductImages, User, Wishlist, Blog, BlogCategories, Comments, Color, \
     Size, ComparedProduct, OrderProduct, Order, Address, Payment
 
 
@@ -31,28 +31,6 @@ def is_valid_form(values):
         if field == '':
             valid = False
     return valid
-
-
-def prod(request):
-    products = Product.objects.all()
-    return render(request, 'test1.html', {'products': products})
-
-
-def produc(request, pk):
-    product = get_object_or_404(Product, id=pk)
-    photos = ProductImages.objects.filter(product=product)
-    color = ProductColor.objects.filter(product=product)
-    return render(request, 'test2.html', {'photos': photos, 'product': product, 'color': color})
-
-
-class ProductLa(ListView):
-    model = ProductColor
-    template_name = 'test3.html'
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['filter'] = ProductFilter(self.request.GET, queryset=self.get_queryset())
-        return context
 
 
 # def filter_by_date_created():
@@ -96,26 +74,6 @@ class ProductListView(ListView):
         context['products'] = base_queryset
 
         return context
-
-    # def get_context_data(self, *, object_list=None, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context['products_discount'] = Product.objects.filter(discount_price__isnull=False).prefetch_related(
-    #         'productimages_set').distinct()
-    #
-    #     latest = self.request.GET.get('latest')
-    #     if latest == 'apply_filter':
-    #         queryset = Product.objects.all().prefetch_related('productimages_set').order_by('-date_created')
-    #         context['products'] = queryset
-    #     elif latest == 'apply_filter_price':
-    #         queryset = Product.objects.all().prefetch_related('productimages_set').order_by('price')
-    #         context['products'] = queryset
-    #     elif latest == 'apply_filter_discount':
-    #         queryset = Product.objects.all().prefetch_related('productimages_set').order_by('discount_price')
-    #         context['products'] = queryset
-    #     else:
-    #         context['products'] = self.get_queryset()
-    #
-    #     return context
 
 
 class ProductDetailView(DetailView):
@@ -163,44 +121,33 @@ class Canvas(ListView):
         return queryset
 
 
-class WishListUser(DetailView):
+class WishListUser(View):
     template_name = 'wishlist.html'
-    model = Product
 
-    def get_object(self, queryset=None):
-        username = self.kwargs['username']
-        user = get_object_or_404(User, username=username)
-        return user
-
-    def get_queryset(self):
-        user = self.get_object()
-        queryset = Wishlist.objects.filter(user=user)
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['products'] = self.get_queryset()
-        return context
+    def get(self, request, *args, **kwargs):
+        wishlist = Wishlist.objects.filter(user=self.request.user)
+        context = {
+            'products': wishlist
+        }
+        return render(request, self.template_name, context)
 
 
 @login_required
-def add_to_wishlist(request, pk, username):
-    user_wish = get_object_or_404(User, username=username)
+def add_to_wishlist(request, pk):
     product = get_object_or_404(Product, pk=pk)
     Wishlist.objects.get_or_create(user=request.user, product=product)
-    return redirect('wishlist_by_username', username=request.user)
+    return redirect('wishlist_by_username')
 
 
 @login_required
-def delete_wish_product(request, pk, username):
-    user = get_object_or_404(User, username=username)
+def delete_wish_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
     try:
-        wish = Wishlist.objects.get(user=user, product=product)
+        wish = Wishlist.objects.get(user=request.user, product=product)
         wish.delete()
     except Wishlist.DoesNotExist:
         pass
-    return redirect('wishlist_by_username', username=request.user)
+    return redirect('wishlist_by_username')
 
 
 class BlogList(ListView):
@@ -389,11 +336,9 @@ class CartPage(LoginRequiredMixin, View):
     def get(self, *args, **kwargs):
         try:
             order = Order.objects.get(user=self.request.user, ordered=False)
-            sub_total = sum(cart_item.total() for cart_item in order.items.all())
 
             context = {
                 'object': order,
-                'sub_total': sub_total
             }
             return render(self.request, 'cart_page.html', context)
         except ObjectDoesNotExist:
@@ -592,55 +537,11 @@ class CheckoutView(View):
             return redirect("cart_page")
 
 
-#
-# class PaymentView(View):
-#     def get(self, *args, **kwargs):
-#         order = Order.objects.get(user=self.request.user, ordered=False)
-#         if order.billing_address:
-#             form = PayPalPaymentsForm()
-#             context = {
-#                 'order': order,
-#                 'DISPLAY_COUPON_FORM': False,
-#                 'form': form
-#             }
-#             return render(self.request, "core/payment_process.html", context)
-#         else:
-#             messages.warning(
-#                 self.request, "You have not added a billing address")
-#             return redirect("checkout")
-#
-#     def post(self, *args, **kwargs):
-#         try:
-#             order = Order.objects.get(user=self.request.user)
-#             host = self.request.get_host()
-#             total_amount = order.get_total()
-#
-#             payment = Payment()
-#             payment.user = self.request.user
-#             payment.amount = total_amount
-#             payment.save()
-#
-#             paypal_dict = {
-#                 'business': settings.PAYPAL_RECEIVER_EMAIL,
-#                 'amount': str(total_amount),
-#                 'item_name': f'Order-Item-No-{order.pk}',
-#                 'invoice': f'INVOICE_NO-{str(payment.payment_id)}',
-#                 'currency_code': 'USD',
-#                 'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
-#                 'return_url': 'http://{}{}'.format(host, reverse('payment_done')),
-#                 'cancel_return': 'http://{}{}'.format(host, reverse('payment_canceled')),
-#             }
-#             form = PayPalPaymentsForm(initial=paypal_dict)
-#             return render(self.request, 'core/payment_process.html',
-#                           {'form': form, 'total_amount': total_amount})
-#         except ObjectDoesNotExist:
-#             messages.warning(
-#                 self.request, "You have not a order to pay")
-#             return redirect("checkout")
-
-
-def add_compare_product(request, pk):
-    product = get_object_or_404(Product, id=pk)
+def add_compare_product(request, slug):
+    try:
+        product = get_object_or_404(Product, slug=slug)
+    except ObjectDoesNotExist:
+        return messages.warning(request, 'Product not found sorry for the inconvenience')
 
     compared_product, created = ComparedProduct.objects.get_or_create(user=request.user)
 
@@ -650,45 +551,42 @@ def add_compare_product(request, pk):
     elif not compared_product.product_2:
         compared_product.product_2 = product
         compared_product.save()
-    return redirect('index')
+        messages.info('Product added to compare')
+    return redirect('compare')
 
 
-def remove_compare_product(request, pk):
-    product = get_object_or_404(Product, id=pk)
-
+def remove_compare_product(request, slug):
+    product = get_object_or_404(Product, slug=slug)
     try:
         compared_product = ComparedProduct.objects.get(product_1=product)
         compared_product.product_1 = None
         compared_product.save()
-        return JsonResponse({'message': 'Product removed from comparison successfully'})
+
+        messages.info(request, 'Product removed from compare')
+        return redirect('compare')
     except ComparedProduct.DoesNotExist:
         try:
             compared_product = ComparedProduct.objects.get(product_2=product)
             compared_product.product_2 = None
             compared_product.save()
-            return JsonResponse({'message': 'Product removed from comparison successfully'})
+
+            messages.info(request, 'Product removed from compare')
+            return redirect('compare')
         except ComparedProduct.DoesNotExist:
-            return JsonResponse({'error': 'Compared product not found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+            messages.warning(request, 'Product not found in compare')
+            return redirect('compare')
 
 
-class ComparePage(DetailView):
-    template_name = 'compare.html'
-    model = ComparedProduct
-
-    def get_object(self, queryset=None):
-        username = self.kwargs['username']
-        user = get_object_or_404(User, username=username)
-        return user
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.get_object()
-        context['compares'] = ComparedProduct.objects.get(user=user)
-        return context
+class ComparePage(View):
+    def get(self, *args, **kwargs):
+        try:
+            compared_product = ComparedProduct.objects.get(user=self.request.user)
+            context = {
+                'compares': compared_product,
+            }
+            return render(self.request, 'compare.html', context)
+        except ComparedProduct.DoesNotExist:
+            return render(self.request, 'compare.html')
 
 
 def payment_process(request):
@@ -721,3 +619,15 @@ def payment_process(request):
         messages.warning(
             request, "You have not a order to pay")
     return redirect("checkout")
+
+
+class OrderConfirmationView(LoginRequiredMixin, View):
+    def get(self, *args, **kwargs):
+        order_qs = Order.objects.filter(user=self.request.user, ordered=True)
+        order = order_qs[0]
+        products = order.items.all().prefetch_related('item').all()
+        contex = {
+            'order': order,
+            'products': products,
+        }
+        return render(self.request, 'order-confirmation.html', contex)

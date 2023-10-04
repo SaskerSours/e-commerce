@@ -140,11 +140,11 @@
                                                            class="btn btn-primary btn-cart">
                                                                 <i class="material-icons">shopping_cart</i><span>Add to cart</span>
                                                           </a>
-                                                           <a href="{% if request.user.is_authenticated %} {% url 'add_to_wishlist' username=request.user.username pk=product.pk %} {% else %} # {% endif %}"
+                                                           <a href="{% if request.user.is_authenticated %} {% url 'add_to_wishlist' pk=product.pk %} {% else %} # {% endif %}"
                                                                class="btn btn-primary btn-wishlist">
                                                                 <i class="material-icons">favorite</i><span>wishlist</span>
                                                             </a>
-                                                            <a href="{% url 'add_compare_product' pk=product.pk %}"
+                                                            <a href="{% url 'add_compare_product' slug=product.slug %}"
                                                            class="btn btn-primary btn-cart">
                                                                 <i class="material-icons">equalizer</i><span>Compare</span>
                                                           </a>
@@ -428,7 +428,7 @@
                                                         disabled="disabled">
                                                     <i class="material-icons">shopping_cart</i><span>Add to cart</span>
                                                 </button>
-                                                 <a href="{% if request.user.is_authenticated %} {% url 'add_to_wishlist' username=request.user.username pk=product.pk %} {% else %} # {% endif %}"
+                                                 <a href="{% if request.user.is_authenticated %} {% url 'add_to_wishlist'  pk=product.pk %} {% else %} # {% endif %}"
                                                    class="btn btn-primary btn-wishlist">
                                                     <i class="material-icons">favorite</i><span>wishlist</span>
                                                 </a>

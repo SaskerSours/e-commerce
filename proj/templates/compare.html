@@ -97,16 +97,16 @@
                     <tr>
                         <td></td>
                         <td>
-                          <a href="{% if compares.product_1 %} {% url 'add_to_cart' pk=compares.product_1.pk %} {% else %}  # {% endif %}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i> Add to
+                          <a href="{% if compares.product_1 %} {% url 'add_to_cart' slug=compares.product_1.slug %} {% else %}  # {% endif %}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i> Add to
                                 Cart
                             </a>
-                            <a href="{% if compares.product_1 %} {% url 'remove_compare_product' pk=compares.product_1.pk %} {% else %} # {% endif %}" class="btn btn-secondary" title="Remove">Remove </a>
+                            <a href="{% if compares.product_1 %} {% url 'remove_compare_product' slug=compares.product_1.slug %} {% else %} # {% endif %}" class="btn btn-secondary" title="Remove">Remove </a>
                         </td>
                         <td>
-                            <a href="{% if compares.product_2 %} {% url 'add_to_cart' pk=compares.product_2.pk %} {% else %} # {% endif %}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i> Add to
+                            <a href="{% if compares.product_2 %} {% url 'add_to_cart' slug=compares.product_2.slug %} {% else %} # {% endif %}" class="btn btn-primary"><i class="fa fa-shopping-cart"></i> Add to
                                 Cart
                             </a>
-                             <a href="{% if compares.product_2 %} {% url 'remove_compare_product' pk=compares.product_2.pk %} {% else %} # {% endif %}" class="btn btn-secondary" title="Remove">Remove </a>
+                             <a href="{% if compares.product_2 %} {% url 'remove_compare_product' slug=compares.product_2.slug %} {% else %} # {% endif %}" class="btn btn-secondary" title="Remove">Remove </a>
                         </td>
                     </tr>
                     </tbody>

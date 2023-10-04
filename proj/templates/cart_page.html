@@ -34,9 +34,11 @@
                         {% for order_item in object.items.all %}
                         <tr>
 
-                            <td class="table-remove">
-                                <button><i class="material-icons">delete</i></button>
-                            </td>
+                         <td class="table-remove">
+                                <a href="{% url 'remove_from_cart' order_item.item.slug %}" >
+                                    <i class="material-icons text-dark">delete</i>
+                                </a></td>
+
                             <td class="table-image"><a href="product-details.html"><img
                                     src="{{order_item.item.image.url}}"
                                     alt=""></a></td>

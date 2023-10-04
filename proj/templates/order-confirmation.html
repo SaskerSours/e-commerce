@@ -25,25 +25,27 @@
 			<h3 class="card-title">order items</h3>
 			<div class="order-confirmation-table float-left w-100">
 			<div class="order-line float-left w-100">
+				{% for product in products %}
 				<div class="row">
 				<div class="col-sm-1 col-xs-3 float-left">
-				<img src="{% static 'eccomerce/img/products/02.jpg' %}" alt="">
+				<img src="{{ product.item.image.url }}" alt="">
 				</div>
 				<div class="col-sm-5 col-xs-9 details float-left">
-					<span>aspetur autodit autfugit</span>
+					<span>{{ product.item.model }}</span>
 				</div>
 				<div class="col-sm-6 col-xs-12 qty float-left d-flex">
-				  <div class="col-xs-5 col-sm-5 text-sm-right text-xs-left">$100.00</div>
-				  <div class="col-xs-2 col-sm-2">1</div>
-				  <div class="col-xs-5 col-sm-5 text-sm-right bold">$100.00</div>
+				  <div class="col-xs-5 col-sm-5 text-sm-right text-xs-left">${{ product.item.final_price }}</div>
+				  <div class="col-xs-2 col-sm-2">{{ product.quantity }}</div>
+				  <div class="col-xs-5 col-sm-5 text-sm-right bold">${{product.get_final_price}}</div>
 				</div>
 				</div>
+				{% endfor %}
 			</div>
 			<hr class="float-left w-100">
 			<table class="float-left w-100 mb-30">
                               <tbody><tr class="mb-10">
               <td>Subtotal</td>
-              <td class="text-right">$100.00</td>
+              <td class="text-right">${{ order.payment.amount }}</td>
             </tr>
                                                          <tr class="mb-10">
               <td>Shipping and handling</td>
@@ -51,7 +53,7 @@
             </tr>
                                                                       <tr class="font-weight-bold">
           <td><span class="text-uppercase">Total</span> (tax excl.)</td>
-          <td class="text-right">$107.00</td>
+          <td class="text-right">${{ order.payment.amount }}</td>
         </tr>
       </tbody></table>
 <div id="order-details" class="float-left w-100">
@@ -83,19 +85,19 @@
 <div class="order-content-main">
 	<div class="order-content mb-10">
     <div>Amount</div>
-    <div>$107.00</div>
+    <div>${{ order.payment.amount }}</div>
 	</div>
 	<div class="order-content mb-10">
-    <div>Name of account owner</div>
-    <div>___________</div>
+    <div>Shipping Address</div>
+    <div>{{ order.shipping_address.street_address }}, zip: {{ order.shipping_address.zip }}</div>
 	</div>
 	<div class="order-content mb-10">
-    <div>Please include these details</div>
-    <div>___________</div>
+    <div>Country</div>
+    <div>{{ order.shipping_address.country }}</div>
 	</div>
 		<div class="order-content mb-10">
-    <div>Bank name</div>
-    <div>___________</div>
+    <div>Recipient name</div>
+    <div>{{ order.shipping_address.last_name }} {{ order.shipping_address.first_name }}</div>
 	</div>
 </div>
 
