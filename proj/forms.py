@@ -1,7 +1,15 @@
 from django import forms
 from django.core.validators import MinValueValidator
+from django_countries.fields import CountryField
+from django_countries.widgets import CountrySelectWidget
+from rest_framework.exceptions import ValidationError
+from .models import SIZE_CHOICES, OrderProduct, Color
+from .models import Comments, Reply
 
-from .models import Comments, Reply, CartItemm
+PAYMENT_CHOICES = (
+    ('S', 'Stripe'),
+    ('P', 'PayPal')
+)
 
 
 class CommentsForm(forms.ModelForm):
@@ -29,3 +37,57 @@ class ReplyForm(forms.ModelForm):
         text = self.cleaned_data['text']
         return text
 
+
+class OrderProductForm(forms.ModelForm):
+    # Custom field for selecting colors
+    # selected_colors = forms.ModelMultipleChoiceField(
+    #     queryset=Color.objects.all(),
+    #     widget=forms.CheckboxSelectMultiple,
+    #     required=False,
+    # )
+
+    class Meta:
+        model = OrderProduct
+        fields = ['quantity', 'weight', 'sizes', 'colors']
+
+
+class CheckoutForm(forms.Form):
+    shipping_first_name = forms.CharField(required=False)
+    shipping_last_name = forms.CharField(required=False)
+    shipping_email = forms.EmailField(required=False)
+    shipping_address = forms.CharField(required=False)
+    shipping_address2 = forms.CharField(required=False)
+    shipping_country = CountryField(blank_label="(Select country)").formfield()
+    shipping_zip = forms.CharField(required=False)
+
+    billing_first_name = forms.CharField(required=False)
+    billing_last_name = forms.CharField(required=False)
+    billing_email = forms.EmailField(required=False)
+    billing_address = forms.CharField(required=False)
+    billing_address2 = forms.CharField(required=False)
+    billing_country = CountryField(blank_label="(Select country)").formfield()
+    billing_zip = forms.CharField(required=False)
+
+    same_billing_address = forms.BooleanField(required=False)
+    set_default_shipping = forms.BooleanField(required=False)
+    use_default_shipping = forms.BooleanField(required=False)
+    set_default_billing = forms.BooleanField(required=False)
+    use_default_billing = forms.BooleanField(required=False)
+
+    payment_option = forms.ChoiceField(
+        widget=forms.RadioSelect, choices=PAYMENT_CHOICES)
+
+
+class CouponForm(forms.Form):
+    code = forms.CharField(widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Promo code',
+        'aria-label': 'Recipient\'s username',
+        'aria-describedby': 'basic-addon2'
+    }))
+
+
+class PaymentForm(forms.Form):
+    stripeToken = forms.CharField(required=False)
+    save = forms.BooleanField(required=False)
+    use_default = forms.BooleanField(required=False)

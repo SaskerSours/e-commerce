@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from pathlib import Path
 import dotenv
+
 dotenv.load_dotenv()
 import paypalrestsdk
 
@@ -32,12 +33,14 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "[::1]",
     "testserver",
-    "*",
+    "d078-81-163-126-187.ngrok-free.app",  # Add your ngrok domain here without the "https://"
 ]
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
-
+CSRF_TRUSTED_ORIGINS =[
+    'https://d078-81-163-126-187.ngrok-free.app'
+]
 # Application definition
 AUTHENTICATION_BACKENDS = [
     # Needed to log in by username in Django admin, regardless of `allauth`
@@ -75,6 +78,8 @@ THIRD_PARTY_APPS = [
     'bootstrapform',
     'paypal.standard.ipn',
     'django_countries',
+    'crispy_forms',
+
 ]
 # "allauth.socialaccount.providers.linkedin",
 #   "allauth.socialaccount.providers.digitalocean",
@@ -177,6 +182,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyLibMCCache",
+        "LOCATION": "16.171.236.41:11211",
+    }
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 

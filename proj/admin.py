@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models import Product, Review, ProductImages, ProductColor, ProductSize, Color, Size, Wishlist, Blog, \
-    BlogCategories, Tags, Comments, Reply, Cartt, CartItemm, ComparedProduct, Transaction, CartOrderItem
+from .models import Product, Review, ProductImages, Color, Size, Wishlist, Blog, \
+    BlogCategories, Tags, Comments, Reply, ComparedProduct, OrderProduct, Order, Address, Coupon, Payment
 
 admin.site.register(Review)
 
@@ -22,35 +22,38 @@ admin.site.register(Tags)
 admin.site.register(Comments)
 admin.site.register(Reply)
 
-admin.site.register(Cartt)
-admin.site.register(CartItemm)
-admin.site.register(CartOrderItem)
+admin.site.register(OrderProduct)
+admin.site.register(Order)
+
+admin.site.register(Address)
+admin.site.register(Coupon)
+admin.site.register(Payment)
+
 
 admin.site.register(ComparedProduct)
-admin.site.register(Transaction)
 
 
-class ProductColorAdmin(admin.StackedInline):
-    model = ProductColor
-
-
-class ProductSizeAdmin(admin.StackedInline):
-    model = ProductSize
+# class ProductColorAdmin(admin.StackedInline):
+#     model = ProductColor
+#
+#
+# class ProductSizeAdmin(admin.StackedInline):
+#     model = ProductSize
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    inlines = [ProductColorAdmin, ProductSizeAdmin, ProductImageAdmin]
+    inlines = [ProductImageAdmin] # ProductColorAdmin, ProductSizeAdmin,
 
     class Meta:
         model = Product
 
 
-@admin.register(ProductColor)
-class ProductColorAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(ProductSize)
-class ProductSizeAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(ProductColor)
+# class ProductColorAdmin(admin.ModelAdmin):
+#     pass
+#
+#
+# @admin.register(ProductSize)
+# class ProductSizeAdmin(admin.ModelAdmin):
+#     pass

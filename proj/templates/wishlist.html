@@ -31,7 +31,7 @@
                     {% for wish in products %}
                     <tr>
                         <td class="table-remove">
-                            <a href="{% url 'delete_wish_product' wish.product.pk request.user.username %}">
+                            <a href="{% url 'delete_wish_product' wish.product.pk %}">
                                 <button><i class="material-icons">delete</i></button>
                             </a>
                         </td>

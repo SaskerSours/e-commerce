@@ -31,30 +31,29 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for cart in carts %}
+                        {% for order_item in object.items.all %}
                         <tr>
 
-                            <td class="table-remove">
-                                <button><i class="material-icons">delete</i></button>
-                            </td>
-                            <td class="table-image"><a href="product-details.html"><img src="{{cart.product.image.url}}"
-                                                                                        alt=""></a></td>
-                            <td class="table-p-name text-capitalize"><a href="product-details.html">{{ cart.product.model }}</a></td>
-                            <td class="table-p-price"><p>{{ cart.product.get_final_price }}</p></td>
-                            <td class="table-p-qty"><p>{{ cart.quantity }}</p>
-                                <a href="{% url 'cart_remove_product' pk=cart.product.pk %}"
-                                   class="btn btn-primary btn-cart">
-                                    <i class="material-icons">shopping_cart</i><span>Remove full product from the cart</span>
-                                </a>
-                                <a href="{% url 'remove_obj_cart' pk=cart.product.pk %}"
-                                   class="btn btn-primary btn-cart">
-                                    <i class="material-icons">shopping_cart</i><span>Remove from the cart</span>
-                                </a>
-                                <a href="{% url 'add_to_cart' pk=cart.product.pk %}"
-                                   class="btn btn-primary btn-cart">
-                                    <i class="material-icons">shopping_cart</i><span>Add to cart</span>
+                         <td class="table-remove">
+                                <a href="{% url 'remove_from_cart' order_item.item.slug %}" >
+                                    <i class="material-icons text-dark">delete</i>
                                 </a></td>
-                            <td class="table-total"><p>{{ cart.total }}</p></td>
+
+                            <td class="table-image"><a href="product-details.html"><img
+                                    src="{{order_item.item.image.url}}"
+                                    alt=""></a></td>
+                            <td class="table-p-name text-capitalize"><a href="product-details.html">{{ order_item.item.model }}</a></td>
+                            <td class="table-p-price"><p>{{ order_item.item.get_final_price }}</p></td>
+                            <td class="table-p-qty"><p>{{ order_item.quantity }}</p>
+                                <a href="{% url 'add_to_cart' order_item.item.slug %}"
+                                   class="btn btn-primary btn-cart">
+                                    <i class="material-icons">add</i>
+                                </a>
+                                <a href="{% url 'remove_single_item_from_cart' order_item.item.slug %}"
+                                   class="btn btn-primary btn-cart">
+                                    <i class="material-icons">remove</i>
+                                </a></td>
+                            <td class="table-total"><p>{{ order_item.total }}</p></td>
                         </tr>
                         </tbody>
                         {% endfor %}
@@ -77,7 +76,7 @@
                     <div class="table-total-amount">
                         <div class="single-total-content d-flex justify-content-between float-left w-100">
                             <strong>Subtotal</strong>
-                            <span class="c-total-price">{{ cart_total }}</span>
+                            <span class="c-total-price">{{ sub_total }}</span>
                         </div>
                         <div class="single-total-content d-flex justify-content-between float-left w-100">
                             <strong>Shipping</strong>
@@ -90,7 +89,7 @@
                             <strong>Total</strong>
                             <span class="c-total-price">$165.00</span>
                         </div>
-                        <a href="{% url 'payment_process' username=request.user %}" class="btn btn-primary float-left w-100 text-center">Proceed to
+                        <a href="{% url 'checkout' %}" class="btn btn-primary float-left w-100 text-center">Proceed to
                             checkout</a>
                     </div>
                 </div>
@@ -464,9 +463,9 @@
                                 <input class="btn pull-right mt_10 btn-primary" value="Continue shopping" type="submit">
                             </form>
 
-                                <a  href="{% url 'payment_process' username=request.user %}" class="btn pull-right mt_10 btn-primary"
-                                       type="submit">
-                                </a>
+                            <a href="" class="btn pull-right mt_10 btn-primary"
+                               type="submit">
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<form class="needs-validation" novalidate="" method="POST">
+    {% csrf_token %}
+    <hr class="mb-4">
+    {% if default_shipping_address %}
+    <div class="custom-control custom-checkbox">
+        <input type="checkbox" class="custom-control-input" name="use_default_shipping" id="use_default_shipping">
+        <label class="custom-control-label" for="use_default_shipping">Use default shipping address: {{ default_shipping_address.street_address|truncatechars:10 }}</label>
+    </div>
+    {% endif %}
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="shipping_first_name">First name <span class="required">*</span></label>
+            <input type="text" class="form-control" id="shipping_first_name" name="shipping_first_name" placeholder=""
+                   value="" required="">
+            <div class="invalid-feedback">
+                Valid first name is required.
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="shipping_last_name">Last name <span class="required">*</span></label>
+            <input type="text" class="form-control" id="shipping_last_name" name="shipping_last_name" placeholder=""
+                   value="" required="">
+            <div class="invalid-feedback">
+                Valid last name is required.
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="shipping_email">Email <span class="text-muted">(Optional)</span></label>
+        <input type="email" class="form-control" id="shipping_email" name="shipping_email"
+               placeholder="you@example.com">
+        <div class="invalid-feedback">
+            Please enter a valid email address for shipping updates.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="shipping_address">Address<span class="required">*</span> </label>
+        <input type="text" class="form-control" id="shipping_address" name='shipping_address'
+               placeholder="1234 Main St" required="">
+        <div class="invalid-feedback">
+            Please enter your shipping address.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="shipping_address2">Address 2 <span class="text-muted">(Optional)</span></label>
+        <input type="text" class="form-control" id="shipping_address2"
+               placeholder="Apartment or suite">
+    </div>
+
+    <div class="row">
+        <div class="col-md-5 mb-3">
+            <label for="country">Country <span class="required">*</span></label>
+            {% load countries %}
+            {% get_countries as countries %}
+            <select class="custom-select d-block w-100" id="shipping_country"
+                    name="shipping_country"
+                    required="">
+                {% for country in countries %}
+                <option value="{{ country.code }}" id="shipping_country">{{ country.name }}</option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback">
+                Please select a valid country.
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <label for="shipping_zip">Zip <span class="required">*</span></label>
+            <input type="text" class="form-control" id='shipping_zip' name='shipping_zip'
+                   placeholder=""
+                   required="">
+            <div class="invalid-feedback">
+                Zip code required.
+            </div>
+        </div>
+    </div>
+
+    {% if default_billing_address %}
+    <div class="custom-control custom-checkbox">
+        <input type="checkbox" class="custom-control-input" name="use_default_billing"
+               id="use_default_billing">
+        <label class="custom-control-label" for="use_default_billing">Use default billing address: {{ default_billing_address.street_address|truncatechars:10 }}</label>
+    </div>
+    {% endif %}
+
+    <hr>
+    <div class="d-block my-3">
+        {% for value, name in form.fields.payment_option.choices %}
+        <div class="custom-control custom-radio">
+            <input id="{{ name }}" name="payment_option" value="{{ value }}" type="radio"
+                   class="custom-control-input" required>
+            <label class="custom-control-label" for="{{ name }}">{{ name }}</label>
+        </div>
+        {% endfor %}
+    </div>
+    <hr class="mb-4">
+    <button class="btn btn-primary btn-lg btn-block" type="submit">Continue to checkout</button>
+</form>
+{% endblock %}

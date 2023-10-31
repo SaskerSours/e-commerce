@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
@@ -17,16 +18,21 @@ STATUS_CHOICE = (
     ('shipped', 'Shipped'),
     ('delivered', 'Delivered'),
 )
+ADDRESS_CHOICES = (
+    ('B', 'Billing'),
+    ('S', 'Shipping'),
+)
+
+SIZE_CHOICES = [
+    ('XS', 'XS'),
+    ('S', 'S'),
+    ('M', 'M'),
+    ('L', 'L'),
+    ('XL', 'XL'),
+]
 
 
 class Product(models.Model):
-    SIZE_CHOICES = [
-        ('XS', 'XS'),
-        ('S', 'S'),
-        ('M', 'M'),
-        ('L', 'L'),
-        ('XL', 'XL'),
-    ]
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     model = models.CharField(max_length=100)
@@ -35,10 +41,12 @@ class Product(models.Model):
     summary = models.TextField()
     weight = models.FloatField()
     dimensions = models.CharField(max_length=100)
-    size = models.CharField(max_length=2, choices=SIZE_CHOICES, blank=True)
+    colors = models.ManyToManyField('Color', blank=True)
+    sizes = models.ManyToManyField('Size', blank=True)
     image = models.ImageField(blank=True, upload_to='products/')
     date_created = models.DateTimeField(auto_now_add=True)
     countdown_target = models.DateTimeField(null=True, blank=True)
+    slug = models.SlugField()
 
     def time_remaining(self):
         if self.countdown_target:
@@ -71,7 +79,7 @@ class Product(models.Model):
     def __str__(self):
         return self.model
 
-    def get_final_price(self):
+    def final_price(self):
         if self.discount_price:
             return self.price - self.discount_price
         else:
@@ -94,24 +102,11 @@ class Color(models.Model):
         return self.name
 
 
-class ProductColor(models.Model):
-    product = models.ForeignKey(Product, default=None, on_delete=models.CASCADE)
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.product.model
-
-
 class Size(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
-
-
-class ProductSize(models.Model):
-    product = models.ForeignKey(Product, default=None, on_delete=models.CASCADE)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
 
 
 class Review(models.Model):
@@ -126,35 +121,94 @@ class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-class Cartt(models.Model):
-    cart_id = models.CharField(max_length=250, blank=True, unique=True)
+class OrderProduct(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='orderproduct')
+    quantity = models.IntegerField(default=1)
+    ordered = models.BooleanField(default=False)
+
+    weight = models.FloatField()
+    colors = models.ManyToManyField('Color', blank=True)
+    sizes = models.ManyToManyField('Size', blank=True)
+
+    # def clean(self):
+    #     if (self.colors.count() == 2 or self.sizes.count() == 2) and self.quantity != 2:
+    #         raise ValidationError("Choose two colours or two sizes and set the item quantity to 2")
+    #
+    # def save(self, *args, **kwargs):
+    #     self.full_clean()
+    #     super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.item.model
+
+    def get_final_price(self):
+        return self.item.final_price() * self.quantity
+
+
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    items = models.ManyToManyField(OrderProduct)
+    product_status = models.CharField(choices=STATUS_CHOICE, max_length=30, default='processing')
+    ordered = models.BooleanField(default=False)
+    ordered_date = models.DateTimeField(default=None, null=True, blank=True)
+    shipping_address = models.ForeignKey(
+        'Address', related_name='shipping_address', on_delete=models.SET_NULL, blank=True, null=True)
+    billing_address = models.ForeignKey(
+        'Address', related_name='billing_address', on_delete=models.SET_NULL, blank=True, null=True)
+    coupon = models.ForeignKey(
+        'Coupon', on_delete=models.SET_NULL, blank=True, null=True)
+    payment = models.ForeignKey(
+        'Payment', on_delete=models.SET_NULL, blank=True, null=True)
+    being_delivered = models.BooleanField(default=False)
+    received = models.BooleanField(default=False)
+    refund_requested = models.BooleanField(default=False)
+    refund_granted = models.BooleanField(default=False)
+
+    def get_total(self):
+        total = 0
+        for order_item in self.items.all():
+            total += order_item.get_final_price()
+        if self.coupon:
+            total -= self.coupon.amount
+        return total
+
+
+class Address(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100, default='')
+    last_name = models.CharField(max_length=100, default='')
+    email = models.EmailField(blank=True, null=True)
+    street_address = models.CharField(max_length=100)
+    apartment_address = models.CharField(max_length=100)
+    country = CountryField(multiple=False)
+    zip = models.CharField(max_length=100)
+    address_type = models.CharField(max_length=1, choices=ADDRESS_CHOICES)
+    default = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
 
     class Meta:
-        db_table = 'Cart'
+        verbose_name_plural = 'Addresses'
+
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=15)
+    amount = models.FloatField()
 
     def __str__(self):
-        return self.cart_id
+        return self.code
 
 
-class CartItemm(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cartitems')
-    cart = models.ForeignKey(Cartt, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=0)
-    paid_status = models.BooleanField(default=False)
+class Payment(models.Model):
+    payment_id = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    amount = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.product.model
-
-    def total(self):
-        return self.product.get_final_price() * self.quantity
-
-
-class CartOrderItem(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    cart_order = models.ForeignKey(CartItemm, on_delete=models.CASCADE)
-    invoice_no = models.CharField(max_length=200)
-    product_status = models.CharField(choices=STATUS_CHOICE, max_length=30, default='processing')
+        return str(self.payment_id)
 
 
 class BlogCategories(models.Model):
@@ -212,70 +266,3 @@ class ComparedProduct(models.Model):
     product_1 = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_1', null=True)
     product_2 = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_2', null=True)
     date_added = models.DateTimeField(auto_now_add=True)
-
-
-class Transaction(models.Model):
-    STATE_CHOICES = [
-        ('AL', 'Alabama'),
-        ('AK', 'Alaska'),
-        ('AZ', 'Arizona'),
-        ('AR', 'Arkansas'),
-        ('CA', 'California'),
-        ('CO', 'Colorado'),
-        ('CT', 'Connecticut'),
-        ('DE', 'Delaware'),
-        ('FL', 'Florida'),
-        ('GA', 'Georgia'),
-        ('HI', 'Hawaii'),
-        ('ID', 'Idaho'),
-        ('IL', 'Illinois'),
-        ('IN', 'Indiana'),
-        ('IA', 'Iowa'),
-        ('KS', 'Kansas'),
-        ('KY', 'Kentucky'),
-        ('LA', 'Louisiana'),
-        ('ME', 'Maine'),
-        ('MD', 'Maryland'),
-        ('MA', 'Massachusetts'),
-        ('MI', 'Michigan'),
-        ('MN', 'Minnesota'),
-        ('MS', 'Mississippi'),
-        ('MO', 'Missouri'),
-        ('MT', 'Montana'),
-        ('NE', 'Nebraska'),
-        ('NV', 'Nevada'),
-        ('NH', 'New Hampshire'),
-        ('NJ', 'New Jersey'),
-        ('NM', 'New Mexico'),
-        ('NY', 'New York'),
-        ('NC', 'North Carolina'),
-        ('ND', 'North Dakota'),
-        ('OH', 'Ohio'),
-        ('OK', 'Oklahoma'),
-        ('OR', 'Oregon'),
-        ('PA', 'Pennsylvania'),
-        ('RI', 'Rhode Island'),
-        ('SC', 'South Carolina'),
-        ('SD', 'South Dakota'),
-        ('TN', 'Tennessee'),
-        ('TX', 'Texas'),
-        ('UT', 'Utah'),
-        ('VT', 'Vermont'),
-        ('VA', 'Virginia'),
-        ('WA', 'Washington'),
-        ('WV', 'West Virginia'),
-        ('WI', 'Wisconsin'),
-        ('WY', 'Wyoming'),
-    ]
-
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.EmailField()
-    address = models.CharField(max_length=255)
-    address2 = models.CharField(max_length=255, blank=True, null=True)
-    country = CountryField()
-    state = models.CharField(max_length=2, choices=STATE_CHOICES)
-    zip = models.CharField(max_length=10)
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
