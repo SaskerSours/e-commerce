@@ -20,7 +20,7 @@ from paypal.standard.forms import PayPalPaymentsForm
 from django.contrib import messages
 
 from .filters import filter_products_by_color_and_size
-from .forms import CommentsForm, ReplyForm, CheckoutForm, CouponForm, PaymentForm
+from .forms import CommentsForm, ReplyForm, CheckoutForm, CouponForm, PaymentForm, OrderProductForm
 from .models import Product, ProductImages, User, Wishlist, Blog, BlogCategories, Comments, Color, \
     Size, ComparedProduct, OrderProduct, Order, Address, Payment
 
@@ -76,20 +76,18 @@ class ProductListView(ListView):
         return context
 
 
-class ProductDetailView(DetailView):
-    model = Product
+class ProductDetailView(View):
     template_name = 'product-details.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['product'] = self.get_object()
-        queryset = Product.objects.all().prefetch_related('productimages_set').order_by('-date_created')
-        context['products_image'] = queryset
-        return context
-
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
+        slug = kwargs['slug']
+        product = Product.objects.get(slug=slug)
         queryset = Product.objects.all().prefetch_related('productimages_set').distinct()
-        return queryset
+        context = {
+            'product': product,
+            'products_image': queryset
+        }
+        return render(request, self.template_name, context)
 
 
 class Canvas(ListView):
@@ -631,3 +629,22 @@ class OrderConfirmationView(LoginRequiredMixin, View):
             'products': products,
         }
         return render(self.request, 'order-confirmation.html', contex)
+
+
+def create_order_product(request, slug):
+    if request.method == 'POST':
+        # If the form is submitted, process the data
+        form = OrderProductForm(request.POST)
+        if form.is_valid():
+            product = Product.objects.get(slug=slug)
+            form.item = product
+            # Form data is valid, save the instance
+
+            order_product = form.save()
+            # Optionally, redirect to a success page or perform further actions
+            return redirect('success_url_name')  # Replace 'success_url_name' with your actual URL name
+    else:
+        # If it's a GET request, create a blank form
+        form = OrderProductForm()
+
+    return render(request, 'test.html', {'form': form})

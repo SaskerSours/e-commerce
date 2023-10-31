@@ -31,6 +31,8 @@ urlpatterns = [
     path('compare', views.ComparePage.as_view(), name='compare'),
     path('add-compare-product/<slug>', views.add_compare_product, name='add_compare_product'),
     path('remove-compare-product/<slug>', views.remove_compare_product, name='remove_compare_product'),
-    path('order-confirmation', TemplateView.as_view(template_name='order-confirmation.html'), name='order_confirmation')
+    path('order-confirmation', TemplateView.as_view(template_name='order-confirmation.html'), name='order_confirmation'),
+
+    path('test/<slug>', views.create_order_product, name='create_order_product'),
 
 ]

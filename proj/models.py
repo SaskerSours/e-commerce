@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
@@ -127,8 +128,16 @@ class OrderProduct(models.Model):
     ordered = models.BooleanField(default=False)
 
     weight = models.FloatField()
-    dimension = models.CharField(max_length=100)
-    size = models.CharField(max_length=2, choices=SIZE_CHOICES, blank=True)
+    colors = models.ManyToManyField('Color', blank=True)
+    sizes = models.ManyToManyField('Size', blank=True)
+
+    # def clean(self):
+    #     if (self.colors.count() == 2 or self.sizes.count() == 2) and self.quantity != 2:
+    #         raise ValidationError("Choose two colours or two sizes and set the item quantity to 2")
+    #
+    # def save(self, *args, **kwargs):
+    #     self.full_clean()
+    #     super().save(*args, **kwargs)
 
     def __str__(self):
         return self.item.model

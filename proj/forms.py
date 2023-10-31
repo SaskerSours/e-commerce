@@ -3,7 +3,7 @@ from django.core.validators import MinValueValidator
 from django_countries.fields import CountryField
 from django_countries.widgets import CountrySelectWidget
 from rest_framework.exceptions import ValidationError
-
+from .models import SIZE_CHOICES, OrderProduct, Color
 from .models import Comments, Reply
 
 PAYMENT_CHOICES = (
@@ -36,6 +36,19 @@ class ReplyForm(forms.ModelForm):
     def clean_text(self):
         text = self.cleaned_data['text']
         return text
+
+
+class OrderProductForm(forms.ModelForm):
+    # Custom field for selecting colors
+    # selected_colors = forms.ModelMultipleChoiceField(
+    #     queryset=Color.objects.all(),
+    #     widget=forms.CheckboxSelectMultiple,
+    #     required=False,
+    # )
+
+    class Meta:
+        model = OrderProduct
+        fields = ['quantity', 'weight', 'sizes', 'colors']
 
 
 class CheckoutForm(forms.Form):
